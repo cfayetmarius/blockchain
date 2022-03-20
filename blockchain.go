@@ -5,6 +5,8 @@ import (
 	"time"
 	"crypto/sha256"
 	"strings"
+	"encoding/json"
+	"strconv"
 )
 
 type Block struct {
@@ -22,9 +24,10 @@ type Blockchain struct {
 }
 
 func (b *Block)hashblock() string {
-	h := sha256.New()
-	h.Write([]byte(fmt.Sprintf("%v",b)))
-	return fmt.Sprintf("%x",h.Sum(nil))
+    data, _ := json.Marshal(b.data)
+    blockData := b.hash_p + string(data) + b.timestamp.String() + strconv.Itoa(b.pow)
+    blockHash := sha256.Sum256([]byte(blockData))
+    return fmt.Sprintf("%x", blockHash)
 }
 
 func (b *Block) mine(diff int) {
@@ -56,6 +59,7 @@ func (b *Blockchain) addblock(data string) {
 	}
 	newblock.mine(b.diff)
 	b.chain = append(b.chain, newblock)
+	fmt.Printf("-----------------------------\nAdded new block to blockchain.\nData :%s\nHash of previous : %s\nHash : %s\n-----------------------------\n", newblock.data, newblock.hash_p, newblock.hash)
 }
 
 func (b Blockchain) isValid() bool {
@@ -63,10 +67,11 @@ func (b Blockchain) isValid() bool {
 		pblock := &b.chain[i]
 		block := &b.chain[i+1]
 		if block.hash != block.hashblock() || block.hash_p != pblock.hash {
-			fmt.Println(block.hash)
-			fmt.Println(block.hashblock())
-			fmt.Println(block.hash_p)
-			fmt.Println(pblock.hash)
+			fmt.Printf("Checking block %d\n",i)
+			fmt.Printf("Block %d hash (from block.hash) : %s\n",i,block.hash)
+			fmt.Printf("Block %d hash (from block.hashblock()) : %s\n",i,block.hashblock())
+			fmt.Printf("Block %d : previous block hash (from block.hash_p) : %s\n",i, block.hash_p)
+			fmt.Printf("Block %d : previous block hash (from pblock.hash) : %s\n",i, pblock.hash)
 			return false
 		}
 	}
@@ -80,6 +85,3 @@ func main() {
 	blockchain.addblock("Oeufs")
 	fmt.Println(blockchain.isValid())	
 }
-
-
-
